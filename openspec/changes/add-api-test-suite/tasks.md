@@ -39,7 +39,7 @@
 ## 8. Integration
 
 - [x] 8.1 Verify every scenario in the six specs has a test with the same name and the whole CI passes on the pull request
-- [ ] 8.2 Protect `develop` and `main` on the fork so the `scan_ruby`, `lint` and `test` jobs are required before merging, and verify a pull request with a broken test cannot be merged
+- [x] 8.2 Protect `develop` and `main` on the fork so the `scan_ruby`, `lint` and `test` jobs are required before merging, and verify a pull request with a broken test cannot be merged
 
 ## Workflow follow-up
 
