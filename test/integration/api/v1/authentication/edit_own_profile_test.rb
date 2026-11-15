@@ -17,7 +17,7 @@ module Api
                        json["user"])
         end
 
-        test "Edit own profile: Change password with the current password" do
+        test "Edit own profile: Change password with the current password (new password works)" do
           email = "padre@example.com"
           token = login(email, PASSWORD)
 
@@ -25,8 +25,18 @@ module Api
                               headers: auth_headers(token), as: :json
 
           assert_response :ok
-          assert login(email, NEW_PASSWORD).present?, "login with the new password"
-          assert_nil login(email, PASSWORD), "login with the old password"
+          assert login(email, NEW_PASSWORD).present?
+        end
+
+        test "Edit own profile: Change password with the current password (old password rejected)" do
+          email = "padre@example.com"
+          token = login(email, PASSWORD)
+
+          patch "/api/v1/me", params: { password: NEW_PASSWORD, password_actual: PASSWORD },
+                              headers: auth_headers(token), as: :json
+
+          assert_response :ok
+          assert_nil login(email, PASSWORD)
         end
 
         test "Edit own profile: Change password without the correct current password (wrong)" do

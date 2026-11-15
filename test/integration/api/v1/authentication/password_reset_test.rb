@@ -13,9 +13,15 @@ module Api
 
           assert_response :ok
           assert login(email, NEW_PASSWORD).present?, "login with the new password"
+        end
+
+        test "Password reset: Valid token (reused)" do
+          recovery_token = request_recovery_token("padre@example.com")
+          post "/api/v1/password/reset", params: { token: recovery_token, password: NEW_PASSWORD }, as: :json
 
           post "/api/v1/password/reset", params: { token: recovery_token, password: "Another-pass-789" }, as: :json
-          assert_response :unprocessable_entity, "the token is accepted only once"
+
+          assert_response :unprocessable_entity
         end
 
         test "Password reset: Expired token" do
