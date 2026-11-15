@@ -29,7 +29,7 @@
 
 ## 6. Game sessions
 
-- [ ] 6.1 Tests for recording and listing sessions from `specs/game-sessions/spec.md`, and verify they pass
+- [x] 6.1 Tests for recording and listing sessions from `specs/game-sessions/spec.md`, and verify they pass
 
 ## 7. Dashboard and users
 
