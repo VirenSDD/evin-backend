@@ -2,8 +2,6 @@ require "test_helper"
 
 # specs/user-management/spec.md
 class UserManagementTest < ActionDispatch::IntegrationTest
-  MISSING_ID = 0
-
   setup do
     @admin_token = token_for(:tecnico)
   end
@@ -29,8 +27,9 @@ class UserManagementTest < ActionDispatch::IntegrationTest
   # --- Requirement: Role assignment ---
 
   test "Role assignment: Administrator assigns the teacher role" do
-    post "/api/v1/alumnos", params: { nombre: "Visible Student" }, headers: auth_headers(token_for(:profesor)), as: :json
-    account = register("New Teacher")
+    create_alumno(token_for(:profesor), nombre: "Visible Student")
+    account = create_account(nombre: "New Teacher", email: "new-teacher@example.com", password: PASSWORD,
+                             rol: "padre")
 
     patch "/api/v1/users/#{account[:id]}", params: { rol: "profesor" }, headers: auth_headers(@admin_token), as: :json
 
@@ -45,12 +44,13 @@ class UserManagementTest < ActionDispatch::IntegrationTest
   end
 
   test "Role assignment: Unknown role" do
-    account = register("Keeps Role")
+    account = create_account(nombre: "Keeps Role", email: "keeps-role@example.com", password: PASSWORD,
+                             rol: "padre")
 
     patch "/api/v1/users/#{account[:id]}", params: { rol: "superuser" }, headers: auth_headers(@admin_token), as: :json
 
     assert_response :unprocessable_entity
-    assert_equal "padre", role_of(account[:id])
+    assert_equal "padre", role_of(@admin_token, account[:id])
   end
 
   test "Role assignment: Administrator tries to remove their own role" do
@@ -59,7 +59,7 @@ class UserManagementTest < ActionDispatch::IntegrationTest
     patch "/api/v1/users/#{admin_id}", params: { rol: "profesor" }, headers: auth_headers(@admin_token), as: :json
 
     assert_response :unprocessable_entity
-    assert_equal "tecnico", role_of(admin_id)
+    assert_equal "tecnico", role_of(@admin_token, admin_id)
   end
 
   test "Role assignment: Unknown account" do
@@ -69,27 +69,20 @@ class UserManagementTest < ActionDispatch::IntegrationTest
   end
 
   test "Role assignment: Teacher tries to assign a role" do
-    account = register("Not Promoted")
+    account = create_account(nombre: "Not Promoted", email: "not-promoted@example.com", password: PASSWORD,
+                             rol: "padre")
 
     patch "/api/v1/users/#{account[:id]}", params: { rol: "tecnico" },
                                            headers: auth_headers(token_for(:profesor)), as: :json
 
     assert_response :forbidden
-    assert_equal "padre", role_of(account[:id])
+    assert_equal "padre", role_of(@admin_token, account[:id])
   end
 
   private
 
-  # Signs up a family member account and returns its id and token.
-  def register(nombre)
-    post "/api/v1/register", params: { nombre: nombre, email: "#{nombre.parameterize}@example.com",
-                                       password: PASSWORD, rol: "padre" }, as: :json
-    assert_response :created
-    { id: json["user"]["id"], token: json["token"] }
-  end
-
-  def role_of(user_id)
-    get "/api/v1/users", headers: auth_headers(@admin_token)
+  def role_of(token, user_id)
+    get "/api/v1/users", headers: auth_headers(token)
     json.find { |user| user["id"] == user_id }["rol"]
   end
 end

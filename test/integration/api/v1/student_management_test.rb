@@ -2,8 +2,6 @@ require "test_helper"
 
 # specs/student-management/spec.md
 class StudentManagementTest < ActionDispatch::IntegrationTest
-  MISSING_ID = 0
-
   setup do
     @teacher_token = token_for(:profesor)
   end
@@ -11,8 +9,8 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
   # --- Requirement: Student listing ---
 
   test "Student listing: Teacher lists students" do
-    create_alumno(nombre: "Zoe Student")
-    create_alumno(nombre: "Adam Student")
+    create_alumno(@teacher_token, nombre: "Zoe Student")
+    create_alumno(@teacher_token, nombre: "Adam Student")
 
     get "/api/v1/alumnos", headers: auth_headers(@teacher_token)
 
@@ -25,8 +23,9 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
   end
 
   test "Student listing: Student lists students" do
-    create_alumno(nombre: "Another Student")
-    student = register_student("Signed-up Student")
+    create_alumno(@teacher_token, nombre: "Another Student")
+    student = create_account(nombre: "Signed-up Student", email: "signed-up-student@example.com", password: PASSWORD,
+                             rol: "alumno")
 
     get "/api/v1/alumnos", headers: auth_headers(student[:token])
 
@@ -43,7 +42,7 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
   # --- Requirement: Read a student ---
 
   test "Read a student: Teacher reads a student" do
-    alumno = create_alumno(nombre: "Read Me")
+    alumno = create_alumno(@teacher_token, nombre: "Read Me")
 
     get "/api/v1/alumnos/#{alumno['id']}", headers: auth_headers(@teacher_token)
 
@@ -53,7 +52,8 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
   end
 
   test "Read a student: Student reads their own record" do
-    student = register_student("Self Reader")
+    student = create_account(nombre: "Self Reader", email: "self-reader@example.com", password: PASSWORD,
+                             rol: "alumno")
 
     get "/api/v1/alumnos/#{student[:alumno_id]}", headers: auth_headers(student[:token])
 
@@ -62,8 +62,9 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
   end
 
   test "Read a student: Student reads another record" do
-    other = create_alumno(nombre: "Somebody Else")
-    student = register_student("Curious Student")
+    other = create_alumno(@teacher_token, nombre: "Somebody Else")
+    student = create_account(nombre: "Curious Student", email: "curious-student@example.com", password: PASSWORD,
+                             rol: "alumno")
 
     get "/api/v1/alumnos/#{other['id']}", headers: auth_headers(student[:token])
 
@@ -129,7 +130,7 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
   # --- Requirement: Update students ---
 
   test "Update students: Teacher updates a student" do
-    alumno = create_alumno(nombre: "Moving Up")
+    alumno = create_alumno(@teacher_token, nombre: "Moving Up")
 
     patch "/api/v1/alumnos/#{alumno['id']}", params: { curso: "4º Primaria" }, headers: auth_headers(@teacher_token), as: :json
 
@@ -139,14 +140,14 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
   end
 
   test "Update students: Family member tries to update a student" do
-    alumno = create_alumno(nombre: "Stays Put")
+    alumno = create_alumno(@teacher_token, nombre: "Stays Put", curso: "5º Primaria")
 
     patch "/api/v1/alumnos/#{alumno['id']}", params: { curso: "6º Primaria" },
                                              headers: auth_headers(token_for(:padre)), as: :json
 
     assert_response :forbidden
     get "/api/v1/alumnos/#{alumno['id']}", headers: auth_headers(@teacher_token)
-    assert_equal alumno["curso"], json["curso"]
+    assert_equal "5º Primaria", json["curso"]
   end
 
   test "Update students: Unknown student" do
@@ -158,7 +159,7 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
   # --- Requirement: Delete students ---
 
   test "Delete students: Teacher deletes a student without an account" do
-    alumno = create_alumno(nombre: "Leaving")
+    alumno = create_alumno(@teacher_token, nombre: "Leaving")
 
     delete "/api/v1/alumnos/#{alumno['id']}", headers: auth_headers(@teacher_token)
 
@@ -168,16 +169,17 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
   end
 
   test "Delete students: Teacher deletes a student with an account" do
-    student = register_student("Account Holder")
+    student = create_account(nombre: "Account Holder", email: "account-holder@example.com", password: PASSWORD,
+                             rol: "alumno")
 
     delete "/api/v1/alumnos/#{student[:alumno_id]}", headers: auth_headers(@teacher_token)
 
     assert_response :ok
-    assert_nil login(student[:email], PASSWORD), "login with the deleted account"
+    assert_nil login("account-holder@example.com", PASSWORD), "login with the deleted account"
   end
 
   test "Delete students: Family member tries to delete a student" do
-    alumno = create_alumno(nombre: "Protected")
+    alumno = create_alumno(@teacher_token, nombre: "Protected")
 
     delete "/api/v1/alumnos/#{alumno['id']}", headers: auth_headers(token_for(:padre))
 
@@ -189,9 +191,9 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
   # --- Requirement: Student statistics ---
 
   test "Student statistics: Statistics fields" do
-    alumno = create_alumno(nombre: "Stats Fields")
+    alumno = create_alumno(@teacher_token, nombre: "Stats Fields")
 
-    get_estadisticas(alumno)
+    get_estadisticas(@teacher_token, alumno)
 
     assert_response :ok
     assert_equal %w[juego_favorito juegos_practicados racha_dias sesiones_semana sesiones_totales tendencia ultima_sesion],
@@ -199,9 +201,9 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
   end
 
   test "Student statistics: Student without sessions" do
-    alumno = create_alumno(nombre: "Never Played")
+    alumno = create_alumno(@teacher_token, nombre: "Never Played")
 
-    get_estadisticas(alumno)
+    get_estadisticas(@teacher_token, alumno)
 
     assert_equal 0, json["sesiones_totales"]
     assert_equal 0, json["racha_dias"]
@@ -209,52 +211,52 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
   end
 
   test "Student statistics: Most played game" do
-    alumno = create_alumno(nombre: "Puzzle Fan")
-    record_sesion(alumno, juego: "Puzzle")
-    record_sesion(alumno, juego: "Puzzle")
-    record_sesion(alumno, juego: "Exploraciones")
+    alumno = create_alumno(@teacher_token, nombre: "Puzzle Fan")
+    record_sesion(@teacher_token, alumno, juego: "Puzzle")
+    record_sesion(@teacher_token, alumno, juego: "Puzzle")
+    record_sesion(@teacher_token, alumno, juego: "Exploraciones")
 
-    get_estadisticas(alumno)
+    get_estadisticas(@teacher_token, alumno)
 
     assert_equal "Puzzle", json["juego_favorito"]
     assert_equal [ "Exploraciones", "Puzzle" ], json["juegos_practicados"].sort
   end
 
   test "Student statistics: Streak of consecutive days" do
-    alumno = create_alumno(nombre: "On A Streak")
-    record_sesion(alumno, fecha: "2026-03-02")
-    record_sesion(alumno, fecha: "2026-03-04")
-    record_sesion(alumno, fecha: "2026-03-05")
-    record_sesion(alumno, fecha: "2026-03-06")
+    alumno = create_alumno(@teacher_token, nombre: "On A Streak")
+    record_sesion(@teacher_token, alumno, fecha: "2026-03-02")
+    record_sesion(@teacher_token, alumno, fecha: "2026-03-04")
+    record_sesion(@teacher_token, alumno, fecha: "2026-03-05")
+    record_sesion(@teacher_token, alumno, fecha: "2026-03-06")
 
     # Two days after the last session: the streak counts back from it, not from today.
     travel_to Time.zone.local(2026, 3, 8, 12) do
-      get_estadisticas(alumno)
+      get_estadisticas(@teacher_token, alumno)
     end
 
     assert_equal 3, json["racha_dias"]
   end
 
   test "Student statistics: Trend with few sessions" do
-    alumno = create_alumno(nombre: "Few Sessions")
-    3.times { record_sesion(alumno) }
+    alumno = create_alumno(@teacher_token, nombre: "Few Sessions")
+    3.times { record_sesion(@teacher_token, alumno) }
 
-    get_estadisticas(alumno)
+    get_estadisticas(@teacher_token, alumno)
 
     assert_equal 3, json["sesiones_totales"]
     assert_equal "sin_datos", json["tendencia"]
   end
 
   test "Student statistics: Improving trend" do
-    alumno = create_alumno(nombre: "Getting Better")
+    alumno = create_alumno(@teacher_token, nombre: "Getting Better")
     # Recorded from worst to best, with session dates in the opposite order:
     # the trend follows the recording order, not the session date.
     start = Time.zone.local(2026, 3, 10, 12)
     [ [ 1, "2026-03-09" ], [ 1, "2026-03-08" ], [ 4, "2026-03-07" ], [ 4, "2026-03-06" ] ].each_with_index do |(aciertos, fecha), i|
-      travel_to(start + i.minutes) { record_sesion(alumno, aciertos: aciertos, intentos: 4, fecha: fecha) }
+      travel_to(start + i.minutes) { record_sesion(@teacher_token, alumno, aciertos: aciertos, intentos: 4, fecha: fecha) }
     end
 
-    get_estadisticas(alumno)
+    get_estadisticas(@teacher_token, alumno)
 
     assert_equal "mejorando", json["tendencia"]
   end
@@ -271,28 +273,7 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
     { nombre: "Student", edad: 8, curso: "3º Primaria", dificultad: "Medio", progreso: 50 }.merge(overrides)
   end
 
-  def create_alumno(**attributes)
-    post "/api/v1/alumnos", params: valid_attributes(**attributes), headers: auth_headers(@teacher_token), as: :json
-    assert_response :created
-    json
-  end
-
-  # Signs up a user with the alumno role, which also creates their student record.
-  def register_student(nombre)
-    email = "#{nombre.parameterize}@example.com"
-    post "/api/v1/register", params: { nombre: nombre, email: email, password: PASSWORD, rol: "alumno" }, as: :json
-    assert_response :created
-    { token: json["token"], alumno_id: json["user"]["alumno_id"], email: email }
-  end
-
-  def record_sesion(alumno, juego: "Puzzle", aciertos: 3, intentos: 4, fecha: nil)
-    post "/api/v1/sesiones", params: { alumno: alumno["nombre"], alumno_id: alumno["id"], juego: juego,
-                                       aciertos: aciertos, intentos: intentos, fecha: fecha }.compact,
-                             headers: auth_headers(@teacher_token), as: :json
-    assert_response :created
-  end
-
-  def get_estadisticas(alumno)
-    get "/api/v1/alumnos/#{alumno['id']}/estadisticas", headers: auth_headers(@teacher_token)
+  def get_estadisticas(token, alumno)
+    get "/api/v1/alumnos/#{alumno['id']}/estadisticas", headers: auth_headers(token)
   end
 end

@@ -2,8 +2,6 @@ require "test_helper"
 
 # specs/authentication/spec.md
 class AuthenticationTest < ActionDispatch::IntegrationTest
-  NEW_PASSWORD = "New-pass-456"
-
   # --- Requirement: Login ---
 
   test "Login: Valid credentials" do
@@ -40,7 +38,7 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
   # --- Requirement: Public sign-up ---
 
   test "Public sign-up: Sign-up as family member" do
-    register(nombre: "New Family Member", email: "family@example.com", rol: "padre")
+    register(nombre: "New Family Member", email: "family@example.com", password: PASSWORD, rol: "padre")
 
     assert_response :created
     assert json["token"].present?
@@ -51,7 +49,7 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
   end
 
   test "Public sign-up: Sign-up as student creates the student record" do
-    register(nombre: "New Student", email: "student@example.com", rol: "alumno")
+    register(nombre: "New Student", email: "student@example.com", password: PASSWORD, rol: "alumno")
 
     assert_response :created
     assert_equal "alumno", json["user"]["rol"]
@@ -59,21 +57,21 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
   end
 
   test "Public sign-up: Privileged role requested (profesor)" do
-    register(nombre: "Wants Profesor", email: "wants-profesor@example.com", rol: "profesor")
+    register(nombre: "Wants Profesor", email: "wants-profesor@example.com", password: PASSWORD, rol: "profesor")
 
     assert_response :created
     assert_equal "alumno", json["user"]["rol"]
   end
 
   test "Public sign-up: Privileged role requested (tecnico)" do
-    register(nombre: "Wants Tecnico", email: "wants-tecnico@example.com", rol: "tecnico")
+    register(nombre: "Wants Tecnico", email: "wants-tecnico@example.com", password: PASSWORD, rol: "tecnico")
 
     assert_response :created
     assert_equal "alumno", json["user"]["rol"]
   end
 
   test "Public sign-up: Email already registered" do
-    register(nombre: "Someone Else", email: "profesor@example.com", rol: "padre")
+    register(nombre: "Someone Else", email: "profesor@example.com", password: PASSWORD, rol: "padre")
 
     assert_response :unprocessable_entity
     assert_kind_of Array, json["errors"]
@@ -81,7 +79,7 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
   end
 
   test "Public sign-up: Missing name" do
-    register(nombre: nil, email: "no-name@example.com", rol: "padre")
+    register(nombre: nil, email: "no-name@example.com", password: PASSWORD, rol: "padre")
 
     assert_response :unprocessable_entity
     assert_kind_of Array, json["errors"]
@@ -239,10 +237,6 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
   end
 
   private
-
-  def register(nombre:, email:, rol:)
-    post "/api/v1/register", params: { nombre: nombre, email: email, password: PASSWORD, rol: rol }, as: :json
-  end
 
   # Requests a recovery email, delivers it and reads the token from its link.
   def request_recovery_token(email)

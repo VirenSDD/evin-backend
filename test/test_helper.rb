@@ -1,6 +1,7 @@
 ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require "rails/test_help"
+require_relative "support/api_helpers"
 
 # config/initializers/resend.rb sets SMTP as the delivery method in every
 # environment, overriding config/environments/test.rb. Force the :test method
@@ -20,6 +21,7 @@ end
 module ActionDispatch
   class IntegrationTest
     include ActionMailer::TestHelper
+    include ApiHelpers
 
     # Password of every account in test/fixtures/users.yml.
     PASSWORD = "Test-pass-123"

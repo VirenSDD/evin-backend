@@ -4,14 +4,14 @@ require "test_helper"
 class GameSessionsTest < ActionDispatch::IntegrationTest
   setup do
     @teacher_token = token_for(:profesor)
-    @alumno = create_alumno("Session Player")
+    @alumno = create_alumno(@teacher_token, nombre: "Session Player")
   end
 
   # --- Requirement: Record a game session ---
 
   test "Record a game session: Session of a catalog game" do
     travel_to Time.zone.local(2026, 3, 11, 12) do
-      post_sesion(juego: "Puzzle", aciertos: 3, intentos: 4)
+      post_sesion(@teacher_token, @alumno, juego: "Puzzle", aciertos: 3, intentos: 4)
     end
 
     assert_response :created
@@ -23,7 +23,7 @@ class GameSessionsTest < ActionDispatch::IntegrationTest
   end
 
   test "Record a game session: Session of a game not in the catalog" do
-    post_sesion(juego: "Not In The Catalog")
+    post_sesion(@teacher_token, @alumno, juego: "Not In The Catalog")
 
     assert_response :created
     assert_equal "Not In The Catalog", json["juego_nombre"]
@@ -31,7 +31,7 @@ class GameSessionsTest < ActionDispatch::IntegrationTest
   end
 
   test "Record a game session: More hits than attempts" do
-    post_sesion(aciertos: 5, intentos: 4)
+    post_sesion(@teacher_token, @alumno, aciertos: 5, intentos: 4)
 
     assert_response :unprocessable_entity
     assert_kind_of Array, json["errors"]
@@ -39,7 +39,7 @@ class GameSessionsTest < ActionDispatch::IntegrationTest
   end
 
   test "Record a game session: Incomplete or invalid data (missing student name)" do
-    post_sesion(alumno: nil, alumno_id: nil)
+    post_sesion(@teacher_token, @alumno, alumno: nil, alumno_id: nil)
 
     assert_response :unprocessable_entity
     assert_kind_of Array, json["errors"]
@@ -47,7 +47,7 @@ class GameSessionsTest < ActionDispatch::IntegrationTest
   end
 
   test "Record a game session: Incomplete or invalid data (missing game)" do
-    post_sesion(juego: nil)
+    post_sesion(@teacher_token, @alumno, juego: nil)
 
     assert_response :unprocessable_entity
     assert_kind_of Array, json["errors"]
@@ -55,7 +55,7 @@ class GameSessionsTest < ActionDispatch::IntegrationTest
   end
 
   test "Record a game session: Incomplete or invalid data (zero attempts)" do
-    post_sesion(intentos: 0)
+    post_sesion(@teacher_token, @alumno, intentos: 0)
 
     assert_response :unprocessable_entity
     assert_kind_of Array, json["errors"]
@@ -63,7 +63,7 @@ class GameSessionsTest < ActionDispatch::IntegrationTest
   end
 
   test "Record a game session: Incomplete or invalid data (negative hits)" do
-    post_sesion(aciertos: -1)
+    post_sesion(@teacher_token, @alumno, aciertos: -1)
 
     assert_response :unprocessable_entity
     assert_kind_of Array, json["errors"]
@@ -71,7 +71,7 @@ class GameSessionsTest < ActionDispatch::IntegrationTest
   end
 
   test "Record a game session: Missing token" do
-    post "/api/v1/sesiones", params: sesion_params, as: :json
+    post "/api/v1/sesiones", params: sesion_params(@alumno), as: :json
 
     assert_response :unauthorized
     get "/api/v1/sesiones", headers: auth_headers(@teacher_token)
@@ -81,9 +81,9 @@ class GameSessionsTest < ActionDispatch::IntegrationTest
   # --- Requirement: List game sessions ---
 
   test "List game sessions: Teacher lists every session" do
-    post_sesion(fecha: "2026-03-02")
-    post_sesion(fecha: "2026-03-09")
-    post_sesion(fecha: "2026-03-05")
+    record_sesion(@teacher_token, @alumno, fecha: "2026-03-02")
+    record_sesion(@teacher_token, @alumno, fecha: "2026-03-09")
+    record_sesion(@teacher_token, @alumno, fecha: "2026-03-05")
 
     get "/api/v1/sesiones", headers: auth_headers(@teacher_token)
 
@@ -92,10 +92,10 @@ class GameSessionsTest < ActionDispatch::IntegrationTest
   end
 
   test "List game sessions: Filter by student" do
-    other = create_alumno("Other Player")
-    post_sesion
-    post_sesion
-    post_sesion(alumno: other["nombre"], alumno_id: other["id"])
+    other = create_alumno(@teacher_token, nombre: "Other Player")
+    record_sesion(@teacher_token, @alumno)
+    record_sesion(@teacher_token, @alumno)
+    record_sesion(@teacher_token, other)
 
     get "/api/v1/sesiones", params: { alumno_id: @alumno["id"] }, headers: auth_headers(@teacher_token)
 
@@ -104,9 +104,9 @@ class GameSessionsTest < ActionDispatch::IntegrationTest
   end
 
   test "List game sessions: Filter by game" do
-    post_sesion(juego: "Puzzle")
-    post_sesion(juego: "Exploraciones")
-    post_sesion(juego: "Puzzle")
+    record_sesion(@teacher_token, @alumno, juego: "Puzzle")
+    record_sesion(@teacher_token, @alumno, juego: "Exploraciones")
+    record_sesion(@teacher_token, @alumno, juego: "Puzzle")
 
     get "/api/v1/sesiones", params: { juego: "PUZZ" }, headers: auth_headers(@teacher_token)
 
@@ -122,18 +122,12 @@ class GameSessionsTest < ActionDispatch::IntegrationTest
 
   private
 
-  def create_alumno(nombre)
-    post "/api/v1/alumnos", params: { nombre: nombre }, headers: auth_headers(@teacher_token), as: :json
-    assert_response :created
-    json
-  end
-
-  def sesion_params(**overrides)
-    { alumno: @alumno["nombre"], alumno_id: @alumno["id"], juego: "Puzzle", aciertos: 3, intentos: 4 }
+  def sesion_params(alumno, **overrides)
+    { alumno: alumno["nombre"], alumno_id: alumno["id"], juego: "Puzzle", aciertos: 3, intentos: 4 }
       .merge(overrides).compact
   end
 
-  def post_sesion(**overrides)
-    post "/api/v1/sesiones", params: sesion_params(**overrides), headers: auth_headers(@teacher_token), as: :json
+  def post_sesion(token, alumno, **overrides)
+    post "/api/v1/sesiones", params: sesion_params(alumno, **overrides), headers: auth_headers(token), as: :json
   end
 end
