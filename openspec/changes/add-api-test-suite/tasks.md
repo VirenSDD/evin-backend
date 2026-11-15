@@ -9,7 +9,7 @@
 
 ## 2. Working CI
 
-- [ ] 2.1 Define `DB_PASSWORD` in the `test` job, remove the Chrome, `libvips` and `sqlite3` installation and run `bin/rails db:test:prepare test` without `test:system`; verify the job passes on the pull request
+- [x] 2.1 Define `DB_PASSWORD` in the `test` job, remove the Chrome, `libvips` and `sqlite3` installation and run `bin/rails db:test:prepare test` without `test:system`; verify the job passes on the pull request
 - [x] 2.2 Remove `--ensure-latest` from `bin/brakeman` and verify the `scan_ruby` job passes with no warnings
 - [x] 2.3 Apply `bin/rubocop -a` and verify the `lint` job passes and the diff only changes quotes and whitespace
 
@@ -38,7 +38,7 @@
 
 ## 8. Integration
 
-- [ ] 8.1 Verify every scenario in the six specs has a test with the same name and the whole CI passes on the pull request
+- [x] 8.1 Verify every scenario in the six specs has a test with the same name and the whole CI passes on the pull request
 - [ ] 8.2 Protect `develop` and `main` on the fork so the `scan_ruby`, `lint` and `test` jobs are required before merging, and verify a pull request with a broken test cannot be merged
 
 ## Workflow follow-up
