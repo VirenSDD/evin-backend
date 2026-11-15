@@ -1,15 +1,50 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+# The game catalog, which the API cannot create. Ids are explicit because
+# tests assert them as literal values.
 
-one:
-  nombre: MyString
-  descripcion: MyText
-  img: MyString
-  nivel: MyString
-  tipo: MyString
+encuentra_las_parejas:
+  id: 1
+  nombre: Encuentra las parejas
+  descripcion: Visual memory exercise that pairs cards with the same symbol.
+  img: img/juegos/memoria.png
+  nivel: Fácil
+  tipo: Memoria visual
 
-two:
-  nombre: MyString
-  descripcion: MyText
-  img: MyString
-  nivel: MyString
-  tipo: MyString
+recuerda_las_casillas:
+  id: 2
+  nombre: Recuerda las casillas
+  descripcion: Reproduce from memory a pattern of highlighted squares.
+  img: img/juegos/grid.png
+  nivel: Medio
+  tipo: Atención visual
+
+exploraciones:
+  id: 3
+  nombre: Exploraciones
+  descripcion: Find a target stimulus among distracting images.
+  img: img/juegos/radar.png
+  nivel: Difícil
+  tipo: Atención visual
+
+encuentra_las_diferencias:
+  id: 4
+  nombre: Encuentra las diferencias
+  descripcion: Spot every difference between two almost identical images.
+  img: img/juegos/diferencias.png
+  nivel: Medio
+  tipo: Atención visual
+
+cierre_visual:
+  id: 5
+  nombre: Cierre visual
+  descripcion: Match an incomplete shape with the complete one.
+  img: img/juegos/rasgos.png
+  nivel: Medio
+  tipo: Atención visual
+
+puzzle:
+  id: 6
+  nombre: Puzzle
+  descripcion: Rebuild the picture by placing every piece in its position.
+  img: img/juegos/puzzle.png
+  nivel: Medio
+  tipo: Percepción espacial

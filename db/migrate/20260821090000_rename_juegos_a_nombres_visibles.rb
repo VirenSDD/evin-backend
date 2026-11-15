@@ -16,4 +16,3 @@ class RenameJuegosANombresVisibles < ActiveRecord::Migration[7.2]
     Sesion.where(juego_nombre: "Cierre visual").update_all(juego_nombre: "Rasgos críticos")
   end
 end
-

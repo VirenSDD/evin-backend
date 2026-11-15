@@ -45,7 +45,9 @@ Fixtures are reduced to what the API cannot create: one account per role (techni
 
 ### Small, explicit test helpers
 
-`test/test_helper.rb` only adds generic helpers: get a token by logging in through the API, build the `Authorization` header and read the JSON response. No business logic in helpers, so each test can be understood by reading it.
+`test/test_helper.rb` only adds generic helpers: get a token by logging in through the API (the password is always passed explicitly), build the `Authorization` header and read the JSON response. Setup steps used by several test files (sign up, create an account, a student or a game session through the API) live in `test/support/api_helpers.rb`, which `test/test_helper.rb` requires and includes in every integration test. Helpers that act as a user take that user's token as an argument. No business logic in helpers, so each test can be understood by reading it.
+
+Fixtures have explicit ids, and assertions compare against literal values (`2`, `"Test Teacher"`, `"profesor@example.com"`) instead of reading them back from the fixtures, so changing a fixture breaks the tests that depend on it. Responses whose exact shape matters (user, account and session data) are compared as a whole hash, which also fails if a field is added, such as `password_digest`.
 
 ### Controlled time
 
@@ -57,13 +59,22 @@ Rails includes the Active Job helpers in tests, which enqueue jobs without runni
 
 ### Layout
 
-One file per capability in `test/integration/api/v1/` (`authentication_test.rb`, `game_catalog_test.rb`, etc.), with one test per spec scenario named after the scenario. Every scenario can be traced to its test.
+One directory per capability and one file per requirement: `test/integration/api/v1/<capability>/<requirement>_test.rb`, both in snake_case (for example `authentication/login_test.rb` or `student_management/student_statistics_test.rb`). Classes follow the path with the nested modules the controllers use (`Api::V1::Authentication::LoginTest`); no app constant uses these capability names. Each file starts with a comment pointing to its spec and requirement.
+
+Each test is named `"<Requirement>: <Scenario>"` (for example `"Password reset: Valid token"`). The requirement prefix keeps names unique and readable in test output, because several scenarios share a name ("Valid token", "Unknown student", "Missing token"). When a scenario lists several cases (a malformed, foreign or expired token; several kinds of invalid data) or several independent outcomes (a changed password works and the old one is rejected; a used reset token cannot be reused), each case gets its own test named `"<Requirement>: <Scenario> (<case>)"`, for example `"Public sign-up: Privileged role requested (profesor)"`. Every scenario can be traced to at least one test.
+
+### Local runs
+
+The repository had no Docker Compose file for tests, so `docker-compose.test.yml` adds one: a PostgreSQL 16 service with the same credentials as CI and a `ruby` service (version from `.ruby-version`) that runs `bin/rails db:test:prepare test`. `DATABASE_URL` points it at the database container, so `config/database.yml` stays unchanged.
 
 ### CI
 
 - `test` job: define `DB_PASSWORD` with the service password, remove the Chrome, `libvips` and `sqlite3` installation, and run `bin/rails db:test:prepare test` without `test:system`.
 - Brakeman: remove `--ensure-latest` from `bin/brakeman`. Keeping Brakeman up to date is left to Dependabot, which is already configured upstream (it is not enabled by default on forks).
+- Runners: `ubuntu-latest` is now Ubuntu 26.04, for which `ruby/setup-ruby` only builds the latest patch of each series, so Ruby 3.2.0 (`.ruby-version`) cannot be installed. The three jobs are pinned to `ubuntu-24.04` until the Ruby upgrade lands.
+- Brakeman also reports two end-of-life notices (Ruby 3.2.0 and Rails 7.2.3) that are not code vulnerabilities. They are ignored with a note in `config/brakeman.ignore`; each upgrade will be its own change.
 - RuboCop: `bin/rubocop -a` (safe corrections only) for the 16 current offenses.
+- Schema: `db/schema.rb` was not regenerated after the data-only migration `20260821090000_rename_juegos_a_nombres_visibles`, so `rails/test_help` aborted every run with a pending migration error. Its version is bumped to that migration; no table changes.
 - Branches: on the fork, protect `develop` and `main` so the three jobs must pass before merging.
 
 ## Risks / Trade-offs
