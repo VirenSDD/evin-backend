@@ -102,14 +102,28 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
     assert_not_includes json.map { |alumno| alumno["nombre"] }, "Not Allowed"
   end
 
-  test "Create students: Invalid data" do
-    [ { nombre: nil }, { edad: 150 }, { dificultad: "Imposible" } ].each do |invalid|
-      post "/api/v1/alumnos", params: valid_attributes(**invalid), headers: auth_headers(@teacher_token), as: :json
+  test "Create students: Invalid data (missing name)" do
+    post "/api/v1/alumnos", params: valid_attributes(nombre: nil), headers: auth_headers(@teacher_token), as: :json
 
-      assert_response :unprocessable_entity, "invalid #{invalid}"
-      assert_kind_of Array, json["errors"]
-      assert_not_empty json["errors"]
-    end
+    assert_response :unprocessable_entity
+    assert_kind_of Array, json["errors"]
+    assert_not_empty json["errors"]
+  end
+
+  test "Create students: Invalid data (age 150)" do
+    post "/api/v1/alumnos", params: valid_attributes(edad: 150), headers: auth_headers(@teacher_token), as: :json
+
+    assert_response :unprocessable_entity
+    assert_kind_of Array, json["errors"]
+    assert_not_empty json["errors"]
+  end
+
+  test "Create students: Invalid data (unknown difficulty)" do
+    post "/api/v1/alumnos", params: valid_attributes(dificultad: "Imposible"), headers: auth_headers(@teacher_token), as: :json
+
+    assert_response :unprocessable_entity
+    assert_kind_of Array, json["errors"]
+    assert_not_empty json["errors"]
   end
 
   # --- Requirement: Update students ---

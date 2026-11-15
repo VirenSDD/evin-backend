@@ -58,13 +58,18 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
     assert json["user"]["alumno_id"].present?
   end
 
-  test "Public sign-up: Privileged role requested" do
-    %w[profesor tecnico].each do |rol|
-      register(nombre: "Wants #{rol}", email: "wants-#{rol}@example.com", rol: rol)
+  test "Public sign-up: Privileged role requested (profesor)" do
+    register(nombre: "Wants Profesor", email: "wants-profesor@example.com", rol: "profesor")
 
-      assert_response :created
-      assert_equal "alumno", json["user"]["rol"], "requested role #{rol}"
-    end
+    assert_response :created
+    assert_equal "alumno", json["user"]["rol"]
+  end
+
+  test "Public sign-up: Privileged role requested (tecnico)" do
+    register(nombre: "Wants Tecnico", email: "wants-tecnico@example.com", rol: "tecnico")
+
+    assert_response :created
+    assert_equal "alumno", json["user"]["rol"]
   end
 
   test "Public sign-up: Email already registered" do
@@ -102,18 +107,27 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized
   end
 
-  test "Read own profile: Tampered or expired token" do
+  test "Read own profile: Tampered or expired token (malformed)" do
     get "/api/v1/me", headers: auth_headers("not-a-jwt")
-    assert_response :unauthorized, "malformed token"
 
+    assert_response :unauthorized
+  end
+
+  test "Read own profile: Tampered or expired token (signed with another key)" do
     foreign_token = JWT.encode({ user_id: 3, exp: 1.hour.from_now.to_i }, "another-key", "HS256")
-    get "/api/v1/me", headers: auth_headers(foreign_token)
-    assert_response :unauthorized, "token signed with another key"
 
+    get "/api/v1/me", headers: auth_headers(foreign_token)
+
+    assert_response :unauthorized
+  end
+
+  test "Read own profile: Tampered or expired token (expired)" do
     token = token_for(:padre)
+
     travel 25.hours do
       get "/api/v1/me", headers: auth_headers(token)
-      assert_response :unauthorized, "expired token"
+
+      assert_response :unauthorized
     end
   end
 
@@ -143,15 +157,25 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
     assert_nil login(email, PASSWORD), "login with the old password"
   end
 
-  test "Edit own profile: Change password without the correct current password" do
+  test "Edit own profile: Change password without the correct current password (wrong)" do
     email = "padre@example.com"
     token = login(email, PASSWORD)
 
-    [ { password_actual: "wrong-password" }, {} ].each do |current|
-      patch "/api/v1/me", params: { password: NEW_PASSWORD, **current }, headers: auth_headers(token), as: :json
+    patch "/api/v1/me", params: { password: NEW_PASSWORD, password_actual: "wrong-password" },
+                        headers: auth_headers(token), as: :json
 
-      assert_response :unprocessable_entity
-    end
+    assert_response :unprocessable_entity
+    assert login(email, PASSWORD).present?, "login with the old password"
+    assert_nil login(email, NEW_PASSWORD), "login with the new password"
+  end
+
+  test "Edit own profile: Change password without the correct current password (missing)" do
+    email = "padre@example.com"
+    token = login(email, PASSWORD)
+
+    patch "/api/v1/me", params: { password: NEW_PASSWORD }, headers: auth_headers(token), as: :json
+
+    assert_response :unprocessable_entity
     assert login(email, PASSWORD).present?, "login with the old password"
     assert_nil login(email, NEW_PASSWORD), "login with the new password"
   end

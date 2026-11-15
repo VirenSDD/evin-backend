@@ -38,14 +38,36 @@ class GameSessionsTest < ActionDispatch::IntegrationTest
     assert_not_empty json["errors"]
   end
 
-  test "Record a game session: Incomplete or invalid data" do
-    [ { alumno: nil, alumno_id: nil }, { juego: nil }, { intentos: 0 }, { aciertos: -1 } ].each do |invalid|
-      post_sesion(**invalid)
+  test "Record a game session: Incomplete or invalid data (missing student name)" do
+    post_sesion(alumno: nil, alumno_id: nil)
 
-      assert_response :unprocessable_entity, "invalid #{invalid}"
-      assert_kind_of Array, json["errors"]
-      assert_not_empty json["errors"]
-    end
+    assert_response :unprocessable_entity
+    assert_kind_of Array, json["errors"]
+    assert_not_empty json["errors"]
+  end
+
+  test "Record a game session: Incomplete or invalid data (missing game)" do
+    post_sesion(juego: nil)
+
+    assert_response :unprocessable_entity
+    assert_kind_of Array, json["errors"]
+    assert_not_empty json["errors"]
+  end
+
+  test "Record a game session: Incomplete or invalid data (zero attempts)" do
+    post_sesion(intentos: 0)
+
+    assert_response :unprocessable_entity
+    assert_kind_of Array, json["errors"]
+    assert_not_empty json["errors"]
+  end
+
+  test "Record a game session: Incomplete or invalid data (negative hits)" do
+    post_sesion(aciertos: -1)
+
+    assert_response :unprocessable_entity
+    assert_kind_of Array, json["errors"]
+    assert_not_empty json["errors"]
   end
 
   test "Record a game session: Missing token" do
