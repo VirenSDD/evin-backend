@@ -20,7 +20,7 @@
 
 ## 4. Game catalog
 
-- [ ] 4.1 Tests for `specs/game-catalog/spec.md` and verify they pass without a token
+- [x] 4.1 Tests for `specs/game-catalog/spec.md` and verify they pass without a token
 
 ## 5. Students
 
