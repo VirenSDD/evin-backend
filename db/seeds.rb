@@ -137,7 +137,7 @@ begin
       { alumno_id: maria.id,  juego_id: j_dif.id,  aciertos: 5,  intentos: 7,  fecha: 2.days.ago  }
     ].each { |s| Sesion.create!(s) }
 
-  
+
   end
 
   puts "  ✓ #{Sesion.count} sesiones creadas"

@@ -11,7 +11,7 @@
 
 - [ ] 2.1 Define `DB_PASSWORD` in the `test` job, remove the Chrome, `libvips` and `sqlite3` installation and run `bin/rails db:test:prepare test` without `test:system`; verify the job passes on the pull request
 - [x] 2.2 Remove `--ensure-latest` from `bin/brakeman` and verify the `scan_ruby` job passes with no warnings
-- [ ] 2.3 Apply `bin/rubocop -a` and verify the `lint` job passes and the diff only changes quotes and whitespace
+- [x] 2.3 Apply `bin/rubocop -a` and verify the `lint` job passes and the diff only changes quotes and whitespace
 
 ## 3. Authentication
 
