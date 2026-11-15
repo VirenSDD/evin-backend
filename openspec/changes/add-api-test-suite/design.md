@@ -69,6 +69,7 @@ One file per capability in `test/integration/api/v1/` (`authentication_test.rb`,
 ## Risks / Trade-offs
 
 - [Tests pin behavior that may be a bug, such as the streak counting up to the last session instead of today] → Intended: the goal is to detect changes. Fixing them will be an explicit change that modifies the spec and its test.
+- [Sign-up reveals whether an email is already registered (422 "Email has already been taken"), unlike the password recovery request, which always answers with the same message] → Known behavior, pinned on purpose by the "Email already registered" scenario. A later `harden-authentication` change will make sign-up answer identically and add rate limiting to login, sign-up and password recovery; that change will modify the scenario and its test.
 - [Authorization cases not covered in this public change] → They will be handled privately, and tests will be added once they are fixed.
 - [Parallel tests share each process's database] → Each test runs in its own transaction; tests only rely on absolute counts for data they create themselves.
 - [The Resend initializer forces SMTP in test too] → `test/test_helper.rb` sets `:test` delivery. If it were forgotten, delivery would fail for lack of a key instead of sending a real email.
