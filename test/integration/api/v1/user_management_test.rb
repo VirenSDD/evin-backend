@@ -14,10 +14,10 @@ class UserManagementTest < ActionDispatch::IntegrationTest
     get "/api/v1/users", headers: auth_headers(@admin_token)
 
     assert_response :ok
-    assert_equal [ "Test Administrator", "Test Family Member", "Test Teacher" ], json.map { |user| user["nombre"] }
-    json.each do |user|
-      assert_equal %w[email id nombre rol], user.keys.sort
-    end
+    assert_equal [ { "id" => 1, "nombre" => "Test Administrator", "email" => "tecnico@example.com", "rol" => "tecnico" },
+                   { "id" => 3, "nombre" => "Test Family Member", "email" => "padre@example.com", "rol" => "padre" },
+                   { "id" => 2, "nombre" => "Test Teacher", "email" => "profesor@example.com", "rol" => "profesor" } ],
+                 json
   end
 
   test "Account listing: Teacher tries to list accounts" do
@@ -35,8 +35,9 @@ class UserManagementTest < ActionDispatch::IntegrationTest
     patch "/api/v1/users/#{account[:id]}", params: { rol: "profesor" }, headers: auth_headers(@admin_token), as: :json
 
     assert_response :ok
-    assert_equal account[:id], json["id"]
-    assert_equal "profesor", json["rol"]
+    assert_equal({ "id" => account[:id], "nombre" => "New Teacher", "email" => "new-teacher@example.com",
+                   "rol" => "profesor" },
+                 json)
 
     get "/api/v1/alumnos", headers: auth_headers(account[:token])
     assert_response :ok
@@ -53,7 +54,7 @@ class UserManagementTest < ActionDispatch::IntegrationTest
   end
 
   test "Role assignment: Administrator tries to remove their own role" do
-    admin_id = users(:tecnico).id
+    admin_id = 1
 
     patch "/api/v1/users/#{admin_id}", params: { rol: "profesor" }, headers: auth_headers(@admin_token), as: :json
 

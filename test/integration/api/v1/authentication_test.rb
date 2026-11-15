@@ -7,26 +7,24 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
   # --- Requirement: Login ---
 
   test "Login: Valid credentials" do
-    teacher = users(:profesor)
-
-    post "/api/v1/login", params: { email: teacher.email, password: PASSWORD }, as: :json
+    post "/api/v1/login", params: { email: "profesor@example.com", password: PASSWORD }, as: :json
 
     assert_response :ok
     assert json["token"].present?
-    assert_equal %w[alumno_id email id nombre rol], json["user"].keys.sort
-    assert_equal teacher.id, json["user"]["id"]
-    assert_equal "profesor", json["user"]["rol"]
+    assert_equal({ "id" => 2, "nombre" => "Test Teacher", "email" => "profesor@example.com", "rol" => "profesor",
+                   "alumno_id" => nil },
+                 json["user"])
   end
 
   test "Login: Email in uppercase" do
-    post "/api/v1/login", params: { email: users(:profesor).email.upcase, password: PASSWORD }, as: :json
+    post "/api/v1/login", params: { email: "PROFESOR@EXAMPLE.COM", password: PASSWORD }, as: :json
 
     assert_response :ok
     assert json["token"].present?
   end
 
   test "Login: Wrong password" do
-    post "/api/v1/login", params: { email: users(:profesor).email, password: "wrong-password" }, as: :json
+    post "/api/v1/login", params: { email: "profesor@example.com", password: "wrong-password" }, as: :json
 
     assert_response :unauthorized
     assert json["error"].present?
@@ -46,7 +44,10 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
 
     assert_response :created
     assert json["token"].present?
-    assert_equal "padre", json["user"]["rol"]
+    assert json["user"]["id"].present?
+    assert_equal({ "id" => json["user"]["id"], "nombre" => "New Family Member", "email" => "family@example.com",
+                   "rol" => "padre", "alumno_id" => nil },
+                 json["user"])
   end
 
   test "Public sign-up: Sign-up as student creates the student record" do
@@ -67,7 +68,7 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
   end
 
   test "Public sign-up: Email already registered" do
-    register(nombre: "Someone Else", email: users(:profesor).email, rol: "padre")
+    register(nombre: "Someone Else", email: "profesor@example.com", rol: "padre")
 
     assert_response :unprocessable_entity
     assert_kind_of Array, json["errors"]
@@ -90,8 +91,9 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
     get "/api/v1/me", headers: auth_headers(token)
 
     assert_response :ok
-    assert_equal users(:padre).id, json["user"]["id"]
-    assert_equal users(:padre).email, json["user"]["email"]
+    assert_equal({ "id" => 3, "nombre" => "Test Family Member", "email" => "padre@example.com", "rol" => "padre",
+                   "alumno_id" => nil },
+                 json["user"])
   end
 
   test "Read own profile: Missing token" do
@@ -104,7 +106,7 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
     get "/api/v1/me", headers: auth_headers("not-a-jwt")
     assert_response :unauthorized, "malformed token"
 
-    foreign_token = JWT.encode({ user_id: users(:padre).id, exp: 1.hour.from_now.to_i }, "another-key", "HS256")
+    foreign_token = JWT.encode({ user_id: 3, exp: 1.hour.from_now.to_i }, "another-key", "HS256")
     get "/api/v1/me", headers: auth_headers(foreign_token)
     assert_response :unauthorized, "token signed with another key"
 
@@ -124,11 +126,13 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
 
     assert_response :ok
     assert json["token"].present?
-    assert_equal "Renamed Family", json["user"]["nombre"]
+    assert_equal({ "id" => 3, "nombre" => "Renamed Family", "email" => "padre@example.com", "rol" => "padre",
+                   "alumno_id" => nil },
+                 json["user"])
   end
 
   test "Edit own profile: Change password with the current password" do
-    email = users(:padre).email
+    email = "padre@example.com"
     token = login(email, PASSWORD)
 
     patch "/api/v1/me", params: { password: NEW_PASSWORD, password_actual: PASSWORD },
@@ -140,7 +144,7 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
   end
 
   test "Edit own profile: Change password without the correct current password" do
-    email = users(:padre).email
+    email = "padre@example.com"
     token = login(email, PASSWORD)
 
     [ { password_actual: "wrong-password" }, {} ].each do |current|
@@ -155,20 +159,18 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
   # --- Requirement: Password recovery request ---
 
   test "Password recovery request: Registered email" do
-    email = users(:padre).email
-
     assert_enqueued_emails 1 do
-      post "/api/v1/password/forgot", params: { email: email }, as: :json
+      post "/api/v1/password/forgot", params: { email: "padre@example.com" }, as: :json
     end
 
     assert_response :ok
     assert json["message"].present?
     perform_enqueued_jobs
-    assert_equal [ email ], ActionMailer::Base.deliveries.last.to
+    assert_equal [ "padre@example.com" ], ActionMailer::Base.deliveries.last.to
   end
 
   test "Password recovery request: Unregistered email" do
-    post "/api/v1/password/forgot", params: { email: users(:padre).email }, as: :json
+    post "/api/v1/password/forgot", params: { email: "padre@example.com" }, as: :json
     generic_message = json["message"]
 
     assert_no_enqueued_emails do
@@ -182,7 +184,7 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
   # --- Requirement: Password reset ---
 
   test "Password reset: Valid token" do
-    email = users(:padre).email
+    email = "padre@example.com"
     token = request_recovery_token(email)
 
     post "/api/v1/password/reset", params: { token: token, password: NEW_PASSWORD }, as: :json
@@ -195,7 +197,7 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
   end
 
   test "Password reset: Expired token" do
-    email = users(:padre).email
+    email = "padre@example.com"
     token = request_recovery_token(email)
 
     travel 2.hours + 1.minute do

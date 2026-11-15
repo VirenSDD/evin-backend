@@ -10,23 +10,16 @@ class GameSessionsTest < ActionDispatch::IntegrationTest
   # --- Requirement: Record a game session ---
 
   test "Record a game session: Session of a catalog game" do
-    get "/api/v1/juegos"
-    puzzle_id = json.find { |juego| juego["nombre"] == "Puzzle" }["id"]
-
     travel_to Time.zone.local(2026, 3, 11, 12) do
       post_sesion(juego: "Puzzle", aciertos: 3, intentos: 4)
     end
 
     assert_response :created
     assert json["id"].present?
-    assert_equal "Session Player", json["alumno_nombre"]
-    assert_equal "Puzzle", json["juego_nombre"]
-    assert_equal "2026-03-11", json["fecha"]
-    assert_equal 3, json["aciertos"]
-    assert_equal 4, json["intentos"]
-    assert_equal @alumno["id"], json["alumno_id"]
-    assert_equal puzzle_id, json["juego_id"]
-    assert_equal 75, json["porcentaje"]
+    assert_equal({ "id" => json["id"], "alumno_nombre" => "Session Player", "juego_nombre" => "Puzzle",
+                   "fecha" => "2026-03-11", "aciertos" => 3, "intentos" => 4, "alumno_id" => @alumno["id"],
+                   "juego_id" => 6, "porcentaje" => 75 },
+                 json)
   end
 
   test "Record a game session: Session of a game not in the catalog" do

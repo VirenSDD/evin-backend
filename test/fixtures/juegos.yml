@@ -1,6 +1,8 @@
-# The game catalog, which the API cannot create.
+# The game catalog, which the API cannot create. Ids are explicit because
+# tests assert them as literal values.
 
 encuentra_las_parejas:
+  id: 1
   nombre: Encuentra las parejas
   descripcion: Visual memory exercise that pairs cards with the same symbol.
   img: img/juegos/memoria.png
@@ -8,6 +10,7 @@ encuentra_las_parejas:
   tipo: Memoria visual
 
 recuerda_las_casillas:
+  id: 2
   nombre: Recuerda las casillas
   descripcion: Reproduce from memory a pattern of highlighted squares.
   img: img/juegos/grid.png
@@ -15,6 +18,7 @@ recuerda_las_casillas:
   tipo: Atención visual
 
 exploraciones:
+  id: 3
   nombre: Exploraciones
   descripcion: Find a target stimulus among distracting images.
   img: img/juegos/radar.png
@@ -22,6 +26,7 @@ exploraciones:
   tipo: Atención visual
 
 encuentra_las_diferencias:
+  id: 4
   nombre: Encuentra las diferencias
   descripcion: Spot every difference between two almost identical images.
   img: img/juegos/diferencias.png
@@ -29,6 +34,7 @@ encuentra_las_diferencias:
   tipo: Atención visual
 
 cierre_visual:
+  id: 5
   nombre: Cierre visual
   descripcion: Match an incomplete shape with the complete one.
   img: img/juegos/rasgos.png
@@ -36,6 +42,7 @@ cierre_visual:
   tipo: Atención visual
 
 puzzle:
+  id: 6
   nombre: Puzzle
   descripcion: Rebuild the picture by placing every piece in its position.
   img: img/juegos/puzzle.png

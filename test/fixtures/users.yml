@@ -1,20 +1,24 @@
 # One account per role that the public sign-up cannot create, plus a family
 # member. Every other account is created through the API inside each test.
 # All of them use the password in ActionDispatch::IntegrationTest::PASSWORD.
+# Ids are explicit because tests assert them as literal values.
 
 tecnico:
+  id: 1
   nombre: Test Administrator
   email: tecnico@example.com
   password_digest: <%= BCrypt::Password.create("Test-pass-123", cost: BCrypt::Engine::MIN_COST) %>
   rol: tecnico
 
 profesor:
+  id: 2
   nombre: Test Teacher
   email: profesor@example.com
   password_digest: <%= BCrypt::Password.create("Test-pass-123", cost: BCrypt::Engine::MIN_COST) %>
   rol: profesor
 
 padre:
+  id: 3
   nombre: Test Family Member
   email: padre@example.com
   password_digest: <%= BCrypt::Password.create("Test-pass-123", cost: BCrypt::Engine::MIN_COST) %>
