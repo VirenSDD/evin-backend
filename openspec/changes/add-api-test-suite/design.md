@@ -57,13 +57,19 @@ Rails includes the Active Job helpers in tests, which enqueue jobs without runni
 
 ### Layout
 
-One file per capability in `test/integration/api/v1/` (`authentication_test.rb`, `game_catalog_test.rb`, etc.), with one test per spec scenario named after the scenario. Every scenario can be traced to its test.
+One file per capability in `test/integration/api/v1/` (`authentication_test.rb`, `game_catalog_test.rb`, etc.), with one test per spec scenario named `"<Requirement>: <Scenario>"` (for example `"Password reset: Valid token"`). The requirement prefix is needed because several scenarios share a name within one capability ("Valid token", "Unknown student", "Missing token"). Every scenario can be traced to its test.
+
+### Local runs
+
+The repository had no Docker Compose file for tests, so `docker-compose.test.yml` adds one: a PostgreSQL 16 service with the same credentials as CI and a `ruby` service (version from `.ruby-version`) that runs `bin/rails db:test:prepare test`. `DATABASE_URL` points it at the database container, so `config/database.yml` stays unchanged.
 
 ### CI
 
 - `test` job: define `DB_PASSWORD` with the service password, remove the Chrome, `libvips` and `sqlite3` installation, and run `bin/rails db:test:prepare test` without `test:system`.
 - Brakeman: remove `--ensure-latest` from `bin/brakeman`. Keeping Brakeman up to date is left to Dependabot, which is already configured upstream (it is not enabled by default on forks).
+- Brakeman also reports two end-of-life notices (Ruby 3.2.0 and Rails 7.2.3) that are not code vulnerabilities. They are ignored with a note in `config/brakeman.ignore`; each upgrade will be its own change.
 - RuboCop: `bin/rubocop -a` (safe corrections only) for the 16 current offenses.
+- Schema: `db/schema.rb` was not regenerated after the data-only migration `20260821090000_rename_juegos_a_nombres_visibles`, so `rails/test_help` aborted every run with a pending migration error. Its version is bumped to that migration; no table changes.
 - Branches: on the fork, protect `develop` and `main` so the three jobs must pass before merging.
 
 ## Risks / Trade-offs

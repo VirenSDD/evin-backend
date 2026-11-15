@@ -1,0 +1,31 @@
+# Runs the test suite locally with the same setup as CI:
+#   docker compose -f docker-compose.test.yml run --rm test
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: evin
+      POSTGRES_PASSWORD: evin1234
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "evin" ]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  test:
+    image: ruby:3.2.0
+    working_dir: /app
+    command: bash -c "bundle install --quiet && bin/rails db:test:prepare test"
+    environment:
+      RAILS_ENV: test
+      DB_PASSWORD: evin1234
+      DATABASE_URL: postgres://evin:evin1234@db:5432/evin_test
+    volumes:
+      - .:/app
+      - gems:/usr/local/bundle
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  gems: {}
