@@ -25,14 +25,14 @@ module ActionDispatch
     PASSWORD = "Test-pass-123"
 
     # Logs in through the API and returns the access token (nil on failure).
-    def login(email, password = PASSWORD)
+    def login(email, password)
       post "/api/v1/login", params: { email: email, password: password }, as: :json
       json["token"]
     end
 
     # Access token of one of the fixture accounts (:tecnico, :profesor, :padre).
     def token_for(fixture)
-      login(users(fixture).email)
+      login(users(fixture).email, PASSWORD)
     end
 
     def auth_headers(token)

@@ -3,7 +3,7 @@ require "test_helper"
 # specs/game-sessions/spec.md
 class GameSessionsTest < ActionDispatch::IntegrationTest
   setup do
-    @teacher = token_for(:profesor)
+    @teacher_token = token_for(:profesor)
     @alumno = create_alumno("Session Player")
   end
 
@@ -59,7 +59,7 @@ class GameSessionsTest < ActionDispatch::IntegrationTest
     post "/api/v1/sesiones", params: sesion_params, as: :json
 
     assert_response :unauthorized
-    get "/api/v1/sesiones", headers: auth_headers(@teacher)
+    get "/api/v1/sesiones", headers: auth_headers(@teacher_token)
     assert_empty json
   end
 
@@ -70,7 +70,7 @@ class GameSessionsTest < ActionDispatch::IntegrationTest
     post_sesion(fecha: "2026-03-09")
     post_sesion(fecha: "2026-03-05")
 
-    get "/api/v1/sesiones", headers: auth_headers(@teacher)
+    get "/api/v1/sesiones", headers: auth_headers(@teacher_token)
 
     assert_response :ok
     assert_equal [ "2026-03-09", "2026-03-05", "2026-03-02" ], json.map { |sesion| sesion["fecha"] }
@@ -82,7 +82,7 @@ class GameSessionsTest < ActionDispatch::IntegrationTest
     post_sesion
     post_sesion(alumno: other["nombre"], alumno_id: other["id"])
 
-    get "/api/v1/sesiones", params: { alumno_id: @alumno["id"] }, headers: auth_headers(@teacher)
+    get "/api/v1/sesiones", params: { alumno_id: @alumno["id"] }, headers: auth_headers(@teacher_token)
 
     assert_response :ok
     assert_equal [ @alumno["id"] ] * 2, json.map { |sesion| sesion["alumno_id"] }
@@ -93,7 +93,7 @@ class GameSessionsTest < ActionDispatch::IntegrationTest
     post_sesion(juego: "Exploraciones")
     post_sesion(juego: "Puzzle")
 
-    get "/api/v1/sesiones", params: { juego: "PUZZ" }, headers: auth_headers(@teacher)
+    get "/api/v1/sesiones", params: { juego: "PUZZ" }, headers: auth_headers(@teacher_token)
 
     assert_response :ok
     assert_equal [ "Puzzle" ] * 2, json.map { |sesion| sesion["juego_nombre"] }
@@ -108,7 +108,7 @@ class GameSessionsTest < ActionDispatch::IntegrationTest
   private
 
   def create_alumno(nombre)
-    post "/api/v1/alumnos", params: { nombre: nombre }, headers: auth_headers(@teacher), as: :json
+    post "/api/v1/alumnos", params: { nombre: nombre }, headers: auth_headers(@teacher_token), as: :json
     assert_response :created
     json
   end
@@ -119,6 +119,6 @@ class GameSessionsTest < ActionDispatch::IntegrationTest
   end
 
   def post_sesion(**overrides)
-    post "/api/v1/sesiones", params: sesion_params(**overrides), headers: auth_headers(@teacher), as: :json
+    post "/api/v1/sesiones", params: sesion_params(**overrides), headers: auth_headers(@teacher_token), as: :json
   end
 end

@@ -104,8 +104,8 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
     get "/api/v1/me", headers: auth_headers("not-a-jwt")
     assert_response :unauthorized, "malformed token"
 
-    foreign = JWT.encode({ user_id: users(:padre).id, exp: 1.hour.from_now.to_i }, "another-key", "HS256")
-    get "/api/v1/me", headers: auth_headers(foreign)
+    foreign_token = JWT.encode({ user_id: users(:padre).id, exp: 1.hour.from_now.to_i }, "another-key", "HS256")
+    get "/api/v1/me", headers: auth_headers(foreign_token)
     assert_response :unauthorized, "token signed with another key"
 
     token = token_for(:padre)
@@ -129,7 +129,7 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
 
   test "Edit own profile: Change password with the current password" do
     email = users(:padre).email
-    token = login(email)
+    token = login(email, PASSWORD)
 
     patch "/api/v1/me", params: { password: NEW_PASSWORD, password_actual: PASSWORD },
                         headers: auth_headers(token), as: :json
@@ -141,7 +141,7 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
 
   test "Edit own profile: Change password without the correct current password" do
     email = users(:padre).email
-    token = login(email)
+    token = login(email, PASSWORD)
 
     [ { password_actual: "wrong-password" }, {} ].each do |current|
       patch "/api/v1/me", params: { password: NEW_PASSWORD, **current }, headers: auth_headers(token), as: :json

@@ -3,13 +3,13 @@ require "test_helper"
 # specs/teacher-dashboard/spec.md
 class TeacherDashboardTest < ActionDispatch::IntegrationTest
   setup do
-    @teacher = token_for(:profesor)
+    @teacher_token = token_for(:profesor)
   end
 
   # --- Requirement: Activity overview ---
 
   test "Activity overview: Teacher reads the dashboard" do
-    get "/api/v1/dashboard", headers: auth_headers(@teacher)
+    get "/api/v1/dashboard", headers: auth_headers(@teacher_token)
 
     assert_response :ok
     assert_equal %w[actividad_reciente activos_semana juegos_populares sesiones_hoy sesiones_semana sin_sesiones
@@ -20,19 +20,19 @@ class TeacherDashboardTest < ActionDispatch::IntegrationTest
 
   test "Activity overview: Totals reflect recorded sessions" do
     travel_to Time.zone.local(2026, 3, 11, 12) do
-      post "/api/v1/alumnos", params: { nombre: "Dashboard Player" }, headers: auth_headers(@teacher), as: :json
+      post "/api/v1/alumnos", params: { nombre: "Dashboard Player" }, headers: auth_headers(@teacher_token), as: :json
       alumno = json
 
-      get "/api/v1/dashboard", headers: auth_headers(@teacher)
+      get "/api/v1/dashboard", headers: auth_headers(@teacher_token)
       before = json
 
       post "/api/v1/sesiones", params: { alumno: alumno["nombre"], alumno_id: alumno["id"], juego: "Puzzle",
                                          aciertos: 2, intentos: 4 },
-                               headers: auth_headers(@teacher), as: :json
+                               headers: auth_headers(@teacher_token), as: :json
       assert_response :created
       sesion_id = json["id"]
 
-      get "/api/v1/dashboard", headers: auth_headers(@teacher)
+      get "/api/v1/dashboard", headers: auth_headers(@teacher_token)
 
       assert_response :ok
       assert_equal before["total_sesiones"] + 1, json["total_sesiones"]

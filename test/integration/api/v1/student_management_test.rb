@@ -5,7 +5,7 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
   MISSING_ID = 0
 
   setup do
-    @teacher = token_for(:profesor)
+    @teacher_token = token_for(:profesor)
   end
 
   # --- Requirement: Student listing ---
@@ -14,7 +14,7 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
     create_alumno(nombre: "Zoe Student")
     create_alumno(nombre: "Adam Student")
 
-    get "/api/v1/alumnos", headers: auth_headers(@teacher)
+    get "/api/v1/alumnos", headers: auth_headers(@teacher_token)
 
     assert_response :ok
     names = json.map { |alumno| alumno["nombre"] }
@@ -45,7 +45,7 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
   test "Read a student: Teacher reads a student" do
     alumno = create_alumno(nombre: "Read Me")
 
-    get "/api/v1/alumnos/#{alumno['id']}", headers: auth_headers(@teacher)
+    get "/api/v1/alumnos/#{alumno['id']}", headers: auth_headers(@teacher_token)
 
     assert_response :ok
     assert_equal alumno["id"], json["id"]
@@ -71,7 +71,7 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
   end
 
   test "Read a student: Unknown student" do
-    get "/api/v1/alumnos/#{MISSING_ID}", headers: auth_headers(@teacher)
+    get "/api/v1/alumnos/#{MISSING_ID}", headers: auth_headers(@teacher_token)
 
     assert_response :not_found
   end
@@ -79,7 +79,7 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
   # --- Requirement: Create students ---
 
   test "Create students: Teacher creates a student" do
-    post "/api/v1/alumnos", params: valid_attributes(nombre: "Brand New"), headers: auth_headers(@teacher), as: :json
+    post "/api/v1/alumnos", params: valid_attributes(nombre: "Brand New"), headers: auth_headers(@teacher_token), as: :json
 
     assert_response :created
     created = json
@@ -89,7 +89,7 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
     assert_equal "Medio", created["dificultad"]
     assert_equal 50, created["progreso"]
 
-    get "/api/v1/alumnos", headers: auth_headers(@teacher)
+    get "/api/v1/alumnos", headers: auth_headers(@teacher_token)
     assert_includes json.map { |alumno| alumno["id"] }, created["id"]
   end
 
@@ -98,13 +98,13 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
                             headers: auth_headers(token_for(:padre)), as: :json
 
     assert_response :forbidden
-    get "/api/v1/alumnos", headers: auth_headers(@teacher)
+    get "/api/v1/alumnos", headers: auth_headers(@teacher_token)
     assert_not_includes json.map { |alumno| alumno["nombre"] }, "Not Allowed"
   end
 
   test "Create students: Invalid data" do
     [ { nombre: nil }, { edad: 150 }, { dificultad: "Imposible" } ].each do |invalid|
-      post "/api/v1/alumnos", params: valid_attributes(**invalid), headers: auth_headers(@teacher), as: :json
+      post "/api/v1/alumnos", params: valid_attributes(**invalid), headers: auth_headers(@teacher_token), as: :json
 
       assert_response :unprocessable_entity, "invalid #{invalid}"
       assert_kind_of Array, json["errors"]
@@ -117,7 +117,7 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
   test "Update students: Teacher updates a student" do
     alumno = create_alumno(nombre: "Moving Up")
 
-    patch "/api/v1/alumnos/#{alumno['id']}", params: { curso: "4º Primaria" }, headers: auth_headers(@teacher), as: :json
+    patch "/api/v1/alumnos/#{alumno['id']}", params: { curso: "4º Primaria" }, headers: auth_headers(@teacher_token), as: :json
 
     assert_response :ok
     assert_equal alumno["id"], json["id"]
@@ -131,12 +131,12 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
                                              headers: auth_headers(token_for(:padre)), as: :json
 
     assert_response :forbidden
-    get "/api/v1/alumnos/#{alumno['id']}", headers: auth_headers(@teacher)
+    get "/api/v1/alumnos/#{alumno['id']}", headers: auth_headers(@teacher_token)
     assert_equal alumno["curso"], json["curso"]
   end
 
   test "Update students: Unknown student" do
-    patch "/api/v1/alumnos/#{MISSING_ID}", params: { curso: "4º Primaria" }, headers: auth_headers(@teacher), as: :json
+    patch "/api/v1/alumnos/#{MISSING_ID}", params: { curso: "4º Primaria" }, headers: auth_headers(@teacher_token), as: :json
 
     assert_response :not_found
   end
@@ -146,20 +146,20 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
   test "Delete students: Teacher deletes a student without an account" do
     alumno = create_alumno(nombre: "Leaving")
 
-    delete "/api/v1/alumnos/#{alumno['id']}", headers: auth_headers(@teacher)
+    delete "/api/v1/alumnos/#{alumno['id']}", headers: auth_headers(@teacher_token)
 
     assert_response :ok
-    get "/api/v1/alumnos/#{alumno['id']}", headers: auth_headers(@teacher)
+    get "/api/v1/alumnos/#{alumno['id']}", headers: auth_headers(@teacher_token)
     assert_response :not_found
   end
 
   test "Delete students: Teacher deletes a student with an account" do
     student = register_student("Account Holder")
 
-    delete "/api/v1/alumnos/#{student[:alumno_id]}", headers: auth_headers(@teacher)
+    delete "/api/v1/alumnos/#{student[:alumno_id]}", headers: auth_headers(@teacher_token)
 
     assert_response :ok
-    assert_nil login(student[:email]), "login with the deleted account"
+    assert_nil login(student[:email], PASSWORD), "login with the deleted account"
   end
 
   test "Delete students: Family member tries to delete a student" do
@@ -168,7 +168,7 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
     delete "/api/v1/alumnos/#{alumno['id']}", headers: auth_headers(token_for(:padre))
 
     assert_response :forbidden
-    get "/api/v1/alumnos/#{alumno['id']}", headers: auth_headers(@teacher)
+    get "/api/v1/alumnos/#{alumno['id']}", headers: auth_headers(@teacher_token)
     assert_response :ok
   end
 
@@ -246,7 +246,7 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
   end
 
   test "Student statistics: Unknown student" do
-    get "/api/v1/alumnos/#{MISSING_ID}/estadisticas", headers: auth_headers(@teacher)
+    get "/api/v1/alumnos/#{MISSING_ID}/estadisticas", headers: auth_headers(@teacher_token)
 
     assert_response :not_found
   end
@@ -258,7 +258,7 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
   end
 
   def create_alumno(**attributes)
-    post "/api/v1/alumnos", params: valid_attributes(**attributes), headers: auth_headers(@teacher), as: :json
+    post "/api/v1/alumnos", params: valid_attributes(**attributes), headers: auth_headers(@teacher_token), as: :json
     assert_response :created
     json
   end
@@ -274,11 +274,11 @@ class StudentManagementTest < ActionDispatch::IntegrationTest
   def record_sesion(alumno, juego: "Puzzle", aciertos: 3, intentos: 4, fecha: nil)
     post "/api/v1/sesiones", params: { alumno: alumno["nombre"], alumno_id: alumno["id"], juego: juego,
                                        aciertos: aciertos, intentos: intentos, fecha: fecha }.compact,
-                             headers: auth_headers(@teacher), as: :json
+                             headers: auth_headers(@teacher_token), as: :json
     assert_response :created
   end
 
   def get_estadisticas(alumno)
-    get "/api/v1/alumnos/#{alumno['id']}/estadisticas", headers: auth_headers(@teacher)
+    get "/api/v1/alumnos/#{alumno['id']}/estadisticas", headers: auth_headers(@teacher_token)
   end
 end

@@ -5,13 +5,13 @@ class UserManagementTest < ActionDispatch::IntegrationTest
   MISSING_ID = 0
 
   setup do
-    @admin = token_for(:tecnico)
+    @admin_token = token_for(:tecnico)
   end
 
   # --- Requirement: Account listing ---
 
   test "Account listing: Administrator lists accounts" do
-    get "/api/v1/users", headers: auth_headers(@admin)
+    get "/api/v1/users", headers: auth_headers(@admin_token)
 
     assert_response :ok
     assert_equal [ "Test Administrator", "Test Family Member", "Test Teacher" ], json.map { |user| user["nombre"] }
@@ -32,7 +32,7 @@ class UserManagementTest < ActionDispatch::IntegrationTest
     post "/api/v1/alumnos", params: { nombre: "Visible Student" }, headers: auth_headers(token_for(:profesor)), as: :json
     account = register("New Teacher")
 
-    patch "/api/v1/users/#{account[:id]}", params: { rol: "profesor" }, headers: auth_headers(@admin), as: :json
+    patch "/api/v1/users/#{account[:id]}", params: { rol: "profesor" }, headers: auth_headers(@admin_token), as: :json
 
     assert_response :ok
     assert_equal account[:id], json["id"]
@@ -46,7 +46,7 @@ class UserManagementTest < ActionDispatch::IntegrationTest
   test "Role assignment: Unknown role" do
     account = register("Keeps Role")
 
-    patch "/api/v1/users/#{account[:id]}", params: { rol: "superuser" }, headers: auth_headers(@admin), as: :json
+    patch "/api/v1/users/#{account[:id]}", params: { rol: "superuser" }, headers: auth_headers(@admin_token), as: :json
 
     assert_response :unprocessable_entity
     assert_equal "padre", role_of(account[:id])
@@ -55,14 +55,14 @@ class UserManagementTest < ActionDispatch::IntegrationTest
   test "Role assignment: Administrator tries to remove their own role" do
     admin_id = users(:tecnico).id
 
-    patch "/api/v1/users/#{admin_id}", params: { rol: "profesor" }, headers: auth_headers(@admin), as: :json
+    patch "/api/v1/users/#{admin_id}", params: { rol: "profesor" }, headers: auth_headers(@admin_token), as: :json
 
     assert_response :unprocessable_entity
     assert_equal "tecnico", role_of(admin_id)
   end
 
   test "Role assignment: Unknown account" do
-    patch "/api/v1/users/#{MISSING_ID}", params: { rol: "profesor" }, headers: auth_headers(@admin), as: :json
+    patch "/api/v1/users/#{MISSING_ID}", params: { rol: "profesor" }, headers: auth_headers(@admin_token), as: :json
 
     assert_response :not_found
   end
@@ -88,7 +88,7 @@ class UserManagementTest < ActionDispatch::IntegrationTest
   end
 
   def role_of(user_id)
-    get "/api/v1/users", headers: auth_headers(@admin)
+    get "/api/v1/users", headers: auth_headers(@admin_token)
     json.find { |user| user["id"] == user_id }["rol"]
   end
 end
