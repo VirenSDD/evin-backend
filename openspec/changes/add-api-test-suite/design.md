@@ -45,7 +45,9 @@ Fixtures are reduced to what the API cannot create: one account per role (techni
 
 ### Small, explicit test helpers
 
-`test/test_helper.rb` only adds generic helpers: get a token by logging in through the API, build the `Authorization` header and read the JSON response. No business logic in helpers, so each test can be understood by reading it.
+`test/test_helper.rb` only adds generic helpers: get a token by logging in through the API (the password is always passed explicitly), build the `Authorization` header and read the JSON response. Setup steps used by several test files (sign up, create an account, a student or a game session through the API) live in `test/support/api_helpers.rb`, which `test/test_helper.rb` requires and includes in every integration test. Helpers that act as a user take that user's token as an argument. No business logic in helpers, so each test can be understood by reading it.
+
+Fixtures have explicit ids, and assertions compare against literal values (`2`, `"Test Teacher"`, `"profesor@example.com"`) instead of reading them back from the fixtures, so changing a fixture breaks the tests that depend on it. Responses whose exact shape matters (user, account and session data) are compared as a whole hash, which also fails if a field is added, such as `password_digest`.
 
 ### Controlled time
 
@@ -57,7 +59,9 @@ Rails includes the Active Job helpers in tests, which enqueue jobs without runni
 
 ### Layout
 
-One file per capability in `test/integration/api/v1/` (`authentication_test.rb`, `game_catalog_test.rb`, etc.), with one test per spec scenario named `"<Requirement>: <Scenario>"` (for example `"Password reset: Valid token"`). The requirement prefix is needed because several scenarios share a name within one capability ("Valid token", "Unknown student", "Missing token"). Every scenario can be traced to its test.
+One directory per capability and one file per requirement: `test/integration/api/v1/<capability>/<requirement>_test.rb`, both in snake_case (for example `authentication/login_test.rb` or `student_management/student_statistics_test.rb`). Classes follow the path with the nested modules the controllers use (`Api::V1::Authentication::LoginTest`); no app constant uses these capability names. Each file starts with a comment pointing to its spec and requirement.
+
+Each test is named `"<Requirement>: <Scenario>"` (for example `"Password reset: Valid token"`). The requirement prefix keeps names unique and readable in test output, because several scenarios share a name ("Valid token", "Unknown student", "Missing token"). When a scenario lists several cases (a malformed, foreign or expired token; several kinds of invalid data), each case gets its own test named `"<Requirement>: <Scenario> (<case>)"`, for example `"Public sign-up: Privileged role requested (profesor)"`. Every scenario can be traced to at least one test.
 
 ### Local runs
 
