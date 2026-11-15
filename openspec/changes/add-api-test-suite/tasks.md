@@ -24,8 +24,8 @@
 
 ## 5. Students
 
-- [ ] 5.1 Tests for listing, reading, creating, updating and deleting students from `specs/student-management/spec.md`, and verify they pass
-- [ ] 5.2 Tests for statistics (fields, no sessions, most played game, streak and trend) using `travel_to`, and verify they pass regardless of the system date
+- [x] 5.1 Tests for listing, reading, creating, updating and deleting students from `specs/student-management/spec.md`, and verify they pass
+- [x] 5.2 Tests for statistics (fields, no sessions, most played game, streak and trend) using `travel_to`, and verify they pass regardless of the system date
 
 ## 6. Game sessions
 
