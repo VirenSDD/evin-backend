@@ -1,0 +1,35 @@
+schema: spec-driven
+
+context: |
+  Language: en
+  All artifacts, code comments, commit messages and pull requests must be written in English.
+  API routes, JSON fields and existing domain names (alumnos, sesiones, juegos,
+  aciertos, intentos...) keep their current Spanish names; do not translate them.
+  Git workflow: git flow (feature/* branches, pull requests to develop).
+  Commit messages and pull request titles follow Conventional Commits
+  (lowercase type, optional scope), for example "feat(students): ...",
+  "test(api): ...", "docs(openspec): ...", "ci: ...".
+  Review comments follow Conventional Comments (praise:, suggestion:,
+  issue:, question:, nitpick:, thought:, chore:, todo:).
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always state what is out of scope
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing
