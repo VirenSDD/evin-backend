@@ -67,6 +67,7 @@ The repository had no Docker Compose file for tests, so `docker-compose.test.yml
 
 - `test` job: define `DB_PASSWORD` with the service password, remove the Chrome, `libvips` and `sqlite3` installation, and run `bin/rails db:test:prepare test` without `test:system`.
 - Brakeman: remove `--ensure-latest` from `bin/brakeman`. Keeping Brakeman up to date is left to Dependabot, which is already configured upstream (it is not enabled by default on forks).
+- Runners: `ubuntu-latest` is now Ubuntu 26.04, for which `ruby/setup-ruby` only builds the latest patch of each series, so Ruby 3.2.0 (`.ruby-version`) cannot be installed. The three jobs are pinned to `ubuntu-24.04` until the Ruby upgrade lands.
 - Brakeman also reports two end-of-life notices (Ruby 3.2.0 and Rails 7.2.3) that are not code vulnerabilities. They are ignored with a note in `config/brakeman.ignore`; each upgrade will be its own change.
 - RuboCop: `bin/rubocop -a` (safe corrections only) for the 16 current offenses.
 - Schema: `db/schema.rb` was not regenerated after the data-only migration `20260821090000_rename_juegos_a_nombres_visibles`, so `rails/test_help` aborted every run with a pending migration error. Its version is bumped to that migration; no table changes.
