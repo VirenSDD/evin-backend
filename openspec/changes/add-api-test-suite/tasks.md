@@ -15,8 +15,8 @@
 
 ## 3. Authentication
 
-- [ ] 3.1 Tests for login, sign-up and own profile from `specs/authentication/spec.md`, and verify they pass
-- [ ] 3.2 Tests for password recovery request and reset from `specs/authentication/spec.md`, using `travel_to` for expiry, and verify they pass without contacting Resend
+- [x] 3.1 Tests for login, sign-up and own profile from `specs/authentication/spec.md`, and verify they pass
+- [x] 3.2 Tests for password recovery request and reset from `specs/authentication/spec.md`, using `travel_to` for expiry, and verify they pass without contacting Resend
 
 ## 4. Game catalog
 
