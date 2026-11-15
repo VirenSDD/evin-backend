@@ -2,9 +2,9 @@
 
 ## 1. Clean test base
 
-- [ ] 1.1 Delete the Rails-generated tests (`test/controllers/`, `test/models/`, `test/mailers/` and `test/channels/`) and verify no `*_test.rb` file remains outside `test/integration/`
-- [ ] 1.2 Replace the fixtures with the minimal set from the design (one account per role and the catalog games) and verify `bin/rails db:fixtures:load RAILS_ENV=test` loads them without errors
-- [ ] 1.3 Add the generic helpers (token through the API, `Authorization` header, JSON response) and the `:test` email delivery to `test/test_helper.rb`, and verify `bin/rails test` finishes green with 0 tests
+- [x] 1.1 Delete the Rails-generated tests (`test/controllers/`, `test/models/`, `test/mailers/` and `test/channels/`) and verify no `*_test.rb` file remains outside `test/integration/`
+- [x] 1.2 Replace the fixtures with the minimal set from the design (one account per role and the catalog games) and verify `bin/rails db:fixtures:load RAILS_ENV=test` loads them without errors
+- [x] 1.3 Add the generic helpers (token through the API, `Authorization` header, JSON response) and the `:test` email delivery to `test/test_helper.rb`, and verify `bin/rails test` finishes green with 0 tests
 - [ ] 1.4 Document in `README.md` how to run the tests locally with Docker Compose and verify the steps work as written
 
 ## 2. Working CI

@@ -1,7 +1,21 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+# One account per role that the public sign-up cannot create, plus a family
+# member. Every other account is created through the API inside each test.
+# All of them use the password in ActionDispatch::IntegrationTest::PASSWORD.
 
-one:
-  nombre: MyString
+tecnico:
+  nombre: Test Administrator
+  email: tecnico@example.com
+  password_digest: <%= BCrypt::Password.create("Test-pass-123", cost: BCrypt::Engine::MIN_COST) %>
+  rol: tecnico
 
-two:
-  nombre: MyString
+profesor:
+  nombre: Test Teacher
+  email: profesor@example.com
+  password_digest: <%= BCrypt::Password.create("Test-pass-123", cost: BCrypt::Engine::MIN_COST) %>
+  rol: profesor
+
+padre:
+  nombre: Test Family Member
+  email: padre@example.com
+  password_digest: <%= BCrypt::Password.create("Test-pass-123", cost: BCrypt::Engine::MIN_COST) %>
+  rol: padre
