@@ -34,7 +34,7 @@
 ## 7. Dashboard and users
 
 - [x] 7.1 Tests for `specs/teacher-dashboard/spec.md` and verify they pass
-- [ ] 7.2 Tests for `specs/user-management/spec.md` and verify they pass
+- [x] 7.2 Tests for `specs/user-management/spec.md` and verify they pass
 
 ## 8. Integration
 
